@@ -43,7 +43,7 @@ AstroBookings is a backend API for managing rockets, launches, customers, and se
 ## API Surface
 
 - `GET /health`
-- `GET|POST|PUT|DELETE /api/rockets`
+- `GET|POST|PUT|DELETE /api/rockets` - Manage rocket inventory with range and capacity filtering and pagination.
 - `GET|POST|PUT|DELETE /api/launches`
 - `GET /api/launches/:launchId/availability`
 - `GET|POST|PUT|DELETE /api/customers`
