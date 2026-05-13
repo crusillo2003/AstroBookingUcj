@@ -36,17 +36,19 @@ test.beforeAll(async () => {
     env: { ...process.env, NODE_ENV: 'development' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-
+  
   await waitForServerReady(serverProcess);
 });
 
 test.afterAll(async () => {
+  console.log("run run run... Killing: "+ serverProcess.kill());
   if (!serverProcess) return;
   serverProcess.kill();
 });
 
 test('health endpoint returns ok', async ({ request }) => {
   const response = await request.get(`http://localhost:${port}/health`);
+  console.log('Respuesta: ', response);
   expect(response.ok()).toBeTruthy();
 
   const body = await response.json();
