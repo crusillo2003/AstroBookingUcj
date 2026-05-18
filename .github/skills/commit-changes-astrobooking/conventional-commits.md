@@ -1,4 +1,4 @@
-# Conventional Commits 
+# Conventional Commits
 
 - Structured commit messages to convey the type of change.
 
@@ -12,14 +12,14 @@
 
 ### Types of Changes
 
-- `feat:` new feature 
-- `fix:` bug fix 
-- `test:` adding or fixing tests 
-- `perf:` code performance improvements 
-- `refactor|style:` code cleanup 
-- `docs:` documentation only changes 
+- `feat:` new feature
+- `fix:` bug fix
+- `test:` adding or fixing tests
+- `perf:` code performance improvements
+- `refactor|style:` code cleanup
+- `docs:` documentation only changes
 - `chore|build|ci:` build process or auxiliary tool changes
-- Breaking changes (indicated by `!` or "BREAKING CHANGE") 
+- Breaking changes (indicated by `!` or "BREAKING CHANGE")
 
 ### Message description
 
