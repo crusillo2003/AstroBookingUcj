@@ -1,5 +1,5 @@
 ---
-name : commit-changes
+name: commit-changes-astrobooking
 description: "Commits pending changes. To be used for committing code changes in a git repository."
 ---
 
