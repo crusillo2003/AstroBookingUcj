@@ -1,3 +1,12 @@
+---
+name: clean
+description: Clean the code at the specified file or folder. Do not write any new feature or tests, just the refactor.
+argument-hint: Provide the file or folder path to clean.
+agent: agent
+model: Auto (copilot)
+tools: [read, agent, edit, search, web, todo]
+---
+
 # Clean TypeScript Code
 
 ## Role
@@ -30,8 +39,12 @@ If not, do it for the last modified file in the git history.
     - Lack of comments or documentation
 4. **Plan the cleaning**: 
   - Apply the planned changes to clean the code.
+5. **Execute the cleaning**: 
+  - Apply the planned changes to clean the code.
+6. **Test the changes**:
+  - Ensure that the cleanned code functions as expected without introducing new issues.
 
 ## Output checklist
 
-- [ ] The code at the specified file or folder is cleaned and refactored.
+- [ ] The code at the specified file or folder is cleaned.
 - [ ] All test pass successfully.
