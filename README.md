@@ -77,3 +77,7 @@ npm run test:unit
 - [Repository at GitHub](https://github.com/AlbertoBasaloAcademy/astro-bookings-demo)
 - Default branch: `main`
 - **Author**: [Alberto Basalo](https://albertobasalo.dev)
+
+## Example change
+
+This is a demo commit: se añade una línea de ejemplo para verificar el flujo de commit.
