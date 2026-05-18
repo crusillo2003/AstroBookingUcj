@@ -15,6 +15,7 @@ app.get("/health", (_req: Request, res: Response): void => {
 if (process.env.NODE_ENV !== "test") {
   app.listen(port, () => {
     console.log(`AstroBookingUcj API is running on http://localhost:${port}`);
+    console.log(`Health endpoint available at http://localhost:${port}/health`);
   });
 }
 
