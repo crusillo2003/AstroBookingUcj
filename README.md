@@ -74,7 +74,7 @@ npm run test:unit
 > AstroBookings is a fictional training project.
 > It is intentionally in-memory, unauthenticated, and not designed for production use.
 
-- [Repository at GitHub](https://github.com/AlbertoBasaloAcademy/astro-bookings-demo)
+- [Repository at GitHub](https://github.com/crusillo2003/AstroBookingUcj)
 - Default branch: `main`
 - **Author**: [Alberto Basalo](https://albertobasalo.dev)
 
