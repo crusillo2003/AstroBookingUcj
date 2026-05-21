@@ -13,22 +13,26 @@ AstroBookings is a backend API for managing rockets, launches, customers, and se
 ## Implemented Features
 
 ### Rocket Management
+
 - Create, read, update, and delete rockets.
 - Filter rockets by range and minimum capacity.
 - Return paginated rocket listings.
 
 ### Launch Management
+
 - Create, read, update, and delete launches.
 - Validate future dates, positive price, and capacity constraints.
 - Enforce lifecycle status transitions: scheduled -> active/cancelled, active -> completed/cancelled.
 - Return launch responses with `rocketName`, `totalSeats`, `bookedSeats`, and `availableSeats`.
 
 ### Customer Management
+
 - Create, read, update, delete, and list customers.
 - Enforce unique email identity.
 - Reject email changes after creation.
 
 ### Booking Management
+
 - Create bookings for existing customers on active launches.
 - Retrieve bookings by ID, by launch, and by customer email.
 - Calculate total booking cost from seat count and launch price.
@@ -64,9 +68,17 @@ npm run test:unit
 
 ## Logging
 
-- Logs are written to stdout and stderr with timestamped level tags.
-- Default log level is `info`.
-- Set `LOG_LEVEL=debug` to enable debug logs.
+- A minimal JSON logger writes messages to `stdout` when enabled.
+- Control logging with the `LOGGING` environment variable. Set `LOGGING=false` (or `0`/`no`) to disable logs.
+- Sample usage:
+
+```bash
+# enable logging (default)
+LOGGING=true npm run dev
+
+# disable logging
+LOGGING=false npm run dev
+```
 
 ## Notes
 

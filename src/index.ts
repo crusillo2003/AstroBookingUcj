@@ -1,6 +1,7 @@
 import express from "express";
 import { Request, Response } from "express";
 import rocketsRouter from "./rockets.js";
+import logger from "./utils/logger.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? "3000");
@@ -15,8 +16,8 @@ app.get("/health", (_req: Request, res: Response): void => {
 
 if (!isTestEnvironment) {
   app.listen(port, () => {
-    console.log(`AstroBookingUcj API is running on http://localhost:${port}`);
-    console.log(`Health endpoint available at http://localhost:${port}/health`);
+    logger.log("server", `AstroBookingUcj API is running on http://localhost:${port}`);
+    logger.log("server", `Health endpoint available at http://localhost:${port}/health`);
   });
 }
 

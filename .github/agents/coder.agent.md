@@ -4,6 +4,11 @@ description: A coder agent that follows an implementation plan to write code, te
 argument-hint: Provide the issue number to start coding.
 model: Auto (copilot)
 tools: [vscode, execute, read, agent, edit, search, web, browser, 'github/*', todo]
+handoffs:
+  - label: Release Implementation
+    agent: DevOps
+    prompt: Release the current implementation
+    send: true
 ---
 
 # Code

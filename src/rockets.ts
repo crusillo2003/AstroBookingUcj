@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { randomUUID } from "crypto";
+import logger from "./utils/logger.js";
 
 const MIN_CAPACITY = 1;
 const MAX_CAPACITY = 10;
@@ -181,6 +182,7 @@ function createRocket(payload: RocketCreate): Rocket {
 }
 
 router.get("/", (req: Request, res: Response): void => {
+  logger.log("rockets", "list request", { query: req.query });
   const rangeQuery = parseQueryParam(req.query.range);
   const capacityQuery = parseQueryParam(req.query.capacity);
   const pageQuery = parseQueryParam(req.query.page);
@@ -211,6 +213,7 @@ router.get("/", (req: Request, res: Response): void => {
   const pageSize = parsePositiveInteger(pageSizeQuery, DEFAULT_PAGE_SIZE);
 
   if (Object.keys(errors).length > 0) {
+    logger.log("rockets", "validation failed for list", { errors });
     buildErrorResponse(res, 400, errors);
     return;
   }
@@ -221,15 +224,18 @@ router.get("/", (req: Request, res: Response): void => {
 
 router.post("/", (req: Request, res: Response): void => {
   const payload = req.body as Partial<RocketCreate>;
+  logger.log("rockets", "create request", { payload });
   const validation = validateRocketPayload(payload);
 
   if (!validation.ok) {
+    logger.log("rockets", "validation failed for create", { errors: validation.errors });
     buildErrorResponse(res, 400, validation.errors);
     return;
   }
 
   const rocket = createRocket(validation.value);
   rocketStore.set(rocket.id, rocket);
+  logger.log("rockets", "rocket created", { id: rocket.id, name: rocket.name });
   res.status(201).json(rocket);
 });
 
@@ -237,6 +243,7 @@ router.get("/:id", (req: Request, res: Response): void => {
   const rocket = rocketStore.get(req.params.id);
 
   if (!rocket) {
+    logger.log("rockets", "rocket not found", { id: req.params.id });
     buildErrorResponse(res, 404, { id: ["Rocket not found."] });
     return;
   }
