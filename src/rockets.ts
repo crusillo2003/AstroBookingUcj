@@ -1,9 +1,7 @@
 import { Router, Request, Response } from "express";
-import { randomUUID } from "crypto";
 import logger from "./utils/logger.js";
+import rocketService from "./services/rocketService.js";
 
-const MIN_CAPACITY = 1;
-const MAX_CAPACITY = 10;
 const DEFAULT_PAGE_SIZE = 10;
 const DEFAULT_PAGE = 1;
 
@@ -43,15 +41,7 @@ export interface ValidationErrors {
   [field: string]: string[];
 }
 
-type ValidationResult<T> = { ok: true; value: T } | { ok: false; errors: ValidationErrors };
-
-const rocketStore = new Map<string, Rocket>();
 const router = Router();
-
-function buildValidationError(field: string, message: string, errors: ValidationErrors): void {
-  errors[field] = errors[field] ?? [];
-  errors[field].push(message);
-}
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -63,61 +53,6 @@ function parseQueryParam(value: unknown): string | undefined {
 
 function isValidRocketRange(value: unknown): value is RocketRange {
   return isNonEmptyString(value) && RocketRanges.includes(value as RocketRange);
-}
-
-function isValidCapacity(value: unknown): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value >= MIN_CAPACITY && value <= MAX_CAPACITY;
-}
-
-function validateRocketPayload(
-  payload: Partial<RocketCreate>,
-  existingId?: string,
-): ValidationResult<RocketCreate> {
-  const errors: ValidationErrors = {};
-  const name = payload.name?.trim();
-
-  if (!isNonEmptyString(name)) {
-    buildValidationError("name", "Name is required and must be a non-empty string.", errors);
-  }
-
-  if (!isValidRocketRange(payload.range)) {
-    buildValidationError(
-      "range",
-      `Range is required and must be one of: ${RocketRanges.join(", ")}.`,
-      errors,
-    );
-  }
-
-  if (!isValidCapacity(payload.capacity)) {
-    buildValidationError(
-      "capacity",
-      `Capacity is required and must be an integer between ${MIN_CAPACITY} and ${MAX_CAPACITY}.`,
-      errors,
-    );
-  }
-
-  if (name) {
-    const duplicate = Array.from(rocketStore.values()).find(
-      (rocket) => rocket.name.toLowerCase() === name.toLowerCase() && rocket.id !== existingId,
-    );
-
-    if (duplicate) {
-      buildValidationError("name", "A rocket with the same name already exists.", errors);
-    }
-  }
-
-  if (Object.keys(errors).length > 0) {
-    return { ok: false, errors };
-  }
-
-  return {
-    ok: true,
-    value: {
-      name: name as string,
-      range: payload.range as RocketRange,
-      capacity: payload.capacity as number,
-    },
-  };
 }
 
 function parsePositiveInteger(value: unknown, defaultValue: number): number {
@@ -135,50 +70,8 @@ function parsePositiveInteger(value: unknown, defaultValue: number): number {
   return defaultValue;
 }
 
-function getPagedRockets(
-  rangeFilter: RocketRange | undefined,
-  capacityFilter: number | undefined,
-  page: number,
-  pageSize: number,
-): PagedResult<Rocket> {
-  let items = Array.from(rocketStore.values());
-
-  if (rangeFilter) {
-    items = items.filter((rocket) => rocket.range === rangeFilter);
-  }
-
-  if (typeof capacityFilter === "number") {
-    items = items.filter((rocket) => rocket.capacity >= capacityFilter);
-  }
-
-  const totalItems = items.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const normalizedPage = Math.min(Math.max(page, 1), totalPages);
-  const startIndex = (normalizedPage - 1) * pageSize;
-
-  return {
-    items: items.slice(startIndex, startIndex + pageSize),
-    meta: {
-      page: normalizedPage,
-      pageSize,
-      totalPages,
-      totalItems,
-    },
-  };
-}
-
 function buildErrorResponse(res: Response, status: number, errors: ValidationErrors): void {
   res.status(status).json({ errors });
-}
-
-function createRocket(payload: RocketCreate): Rocket {
-  const timestamp = new Date().toISOString();
-  return {
-    id: randomUUID(),
-    createdAt: timestamp,
-    updatedAt: timestamp,
-    ...payload,
-  };
 }
 
 router.get("/", (req: Request, res: Response): void => {
@@ -194,7 +87,8 @@ router.get("/", (req: Request, res: Response): void => {
 
   if (rangeQuery !== undefined) {
     if (!isValidRocketRange(rangeQuery)) {
-      buildValidationError("range", `Range filter must be one of: ${RocketRanges.join(", ")}.`, errors);
+      errors["range"] = errors["range"] ?? [];
+      errors["range"].push(`Range filter must be one of: ${RocketRanges.join(", ")}.`);
     } else {
       rangeFilter = rangeQuery;
     }
@@ -202,8 +96,9 @@ router.get("/", (req: Request, res: Response): void => {
 
   if (capacityQuery !== undefined) {
     const capacityValue = Number(capacityQuery);
-    if (!Number.isInteger(capacityValue) || capacityValue < MIN_CAPACITY) {
-      buildValidationError("capacity", "Capacity filter must be an integer greater than or equal to 1.", errors);
+    if (!Number.isInteger(capacityValue) || capacityValue < 1) {
+      errors["capacity"] = errors["capacity"] ?? [];
+      errors["capacity"].push("Capacity filter must be an integer greater than or equal to 1.");
     } else {
       capacityFilter = capacityValue;
     }
@@ -218,29 +113,27 @@ router.get("/", (req: Request, res: Response): void => {
     return;
   }
 
-  const result = getPagedRockets(rangeFilter, capacityFilter, page, pageSize);
+  const result = rocketService.listRockets(rangeFilter, capacityFilter, page, pageSize);
   res.status(200).json(result);
 });
 
 router.post("/", (req: Request, res: Response): void => {
   const payload = req.body as Partial<RocketCreate>;
   logger.log("rockets", "create request", { payload });
-  const validation = validateRocketPayload(payload);
+  const result = rocketService.createRocket(payload);
 
-  if (!validation.ok) {
-    logger.log("rockets", "validation failed for create", { errors: validation.errors });
-    buildErrorResponse(res, 400, validation.errors);
+  if (!result.ok) {
+    logger.log("rockets", "validation failed for create", { errors: result.errors });
+    buildErrorResponse(res, 400, result.errors);
     return;
   }
 
-  const rocket = createRocket(validation.value);
-  rocketStore.set(rocket.id, rocket);
-  logger.log("rockets", "rocket created", { id: rocket.id, name: rocket.name });
-  res.status(201).json(rocket);
+  logger.log("rockets", "rocket created", { id: result.value.id, name: result.value.name });
+  res.status(201).json(result.value);
 });
 
 router.get("/:id", (req: Request, res: Response): void => {
-  const rocket = rocketStore.get(req.params.id);
+  const rocket = rocketService.getRocketById(req.params.id);
 
   if (!rocket) {
     logger.log("rockets", "rocket not found", { id: req.params.id });
@@ -252,38 +145,25 @@ router.get("/:id", (req: Request, res: Response): void => {
 });
 
 router.put("/:id", (req: Request, res: Response): void => {
-  const rocket = rocketStore.get(req.params.id);
-
-  if (!rocket) {
-    buildErrorResponse(res, 404, { id: ["Rocket not found."] });
-    return;
-  }
-
   const payload = req.body as Partial<RocketCreate>;
-  const validation = validateRocketPayload(payload, rocket.id);
+  const result = rocketService.updateRocket(req.params.id, payload);
 
-  if (!validation.ok) {
-    buildErrorResponse(res, 400, validation.errors);
+  if (!result.ok) {
+    buildErrorResponse(res, 404, result.errors);
     return;
   }
 
-  const updatedRocket: Rocket = {
-    ...rocket,
-    ...validation.value,
-    updatedAt: new Date().toISOString(),
-  };
-
-  rocketStore.set(rocket.id, updatedRocket);
-  res.status(200).json(updatedRocket);
+  res.status(200).json(result.value);
 });
 
 router.delete("/:id", (req: Request, res: Response): void => {
-  if (!rocketStore.has(req.params.id)) {
+  const deleted = rocketService.deleteRocket(req.params.id);
+
+  if (!deleted) {
     buildErrorResponse(res, 404, { id: ["Rocket not found."] });
     return;
   }
 
-  rocketStore.delete(req.params.id);
   res.sendStatus(204);
 });
 
